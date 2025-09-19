@@ -7,33 +7,100 @@ from LinkedList import * # my script for a doubly linked list
 
 dirpath = os.path.dirname(os.path.abspath(__file__))
 
-class StableMatchSetup:
-    def __init__(self, filename):
+class StableMatch:
+    def __init__(self):
         # establish all global variables
         self.n = None
-        self.manPref = []
-        self.womanPref = []
-        self.ranking = []
+        self.manPref = []      # men's preferences as read in from input
+        self.womanPref = []    # women's preferences as read in from input
+        self.ranking = []      # women's prefereces, sorted by the men (index by man gives preference)
+        self.proposalCount = 0 # number of proposals
+        self.wPartners = []    # each woman's current partner (None to start)
+        self.nextW = []        # the next women on a man's pref list that he has not proposed to
+        self.freeMen = LinkedList() # list of free men (unengaged)
 
         self.nameMap = {}
         self.allNames = []
+
+        self.filename = ""
+
+        
+    def setup(self, filename):
         self.filename = filename
 
-        self.freeMen = LinkedList()
-
         # create name map
-        self.createNameMap()
-        self.createPrefLists()
+        self.__createNameMap()
+        self.__createPrefLists()
 
         if self.n is not None:
-            self.current = [None]*self.n
-            self.next = [0]*self.n
+            self.wPartners = [None]*self.n
+            self.nextW = [0]*self.n
             
-            for m in reversed(range(self.n)):
-                self.freeMen.insert(m)
+            for m in range(self.n):
+                self.freeMen.insertBack(m)
+        else: 
+            return
+
+        print("Setup Successful!")
+        print("\tAll Names:", self.allNames)
+        print("\tMen Preferences:", self.manPref)
+        print("\tWomen Preferences:", self.womanPref)
+        print("\tWomen's Rankings:", self.ranking)
+        print("\tFree Men Linked List:", self.freeMen.printString())
 
 
-    def createNameMap(self):
+    """
+    Initially all m in the set M and all w in the set W are free
+    While there is a man m who is free and hasn't proposed to every woman
+        Choose such a man m
+        Let w be the highest ranked woman in m's preference list to whom m
+            has not yet proposed
+        If w is free then 
+            (w, m) become engaged
+        Else w is currently engaged to m'
+            If w prefers m' to m then
+                m remains free
+            Else w prefers m to m'
+                (m, w) become engaged
+                m' becomes free
+            Endif
+        Endif
+    Endwhile
+    Return the set S of engaged pairs
+    """
+    def performMatching(self):
+        # this is very much not working will prob have to completely rewrite
+        while self.freeMen.isEmpty() is not True:
+            currM = self.freeMen.first.data
+            currW = self.nextW[currM]
+            wCurrPartner = self.wPartners[currW]
+            print("currM =", currM, "\ncurrW =", currW)
+
+            # the next woman is not engaged
+            if wCurrPartner is None:
+                self.wPartners[currW] = currM
+                self.freeMen.delete(currM)
+                print("currW not engaged, (", currM, ",", currW, ") now engaged")
+            # the next woman IS engaged, but prefers m to m'
+            elif self.ranking[currW][currM] > self.ranking[currW][wCurrPartner]:
+                self.freeMen.insertBack(wCurrPartner)
+                self.wPartners[currW] = currM
+                self.freeMen.delete(currM)
+                print("currW preferred", currM, "to", wCurrPartner, "(", currM, ",", currW, "now engaged")
+            # the next woman IS engaged, AND prefers m' to m
+            else:
+                # m is rejected by w. Move him to the back of the list?
+                self.freeMen.delete(currM)
+                self.freeMen.insertBack(currM)
+                print("currW,", currW, "rejected currM,", currM)
+                
+            self.proposalCount += 1
+            self.nextW[currM] += 1
+
+        
+
+
+    def __createNameMap(self):
         file = open(self.filename, "r")
 
         self.n = int(file.readline().strip()) # just read n
@@ -55,7 +122,7 @@ class StableMatchSetup:
             row += 1
 
 
-    def createPrefLists(self):
+    def __createPrefLists(self):
         # create the men's preference lists
         for m in range(self.n):
             self.manPref.append([])
@@ -75,14 +142,11 @@ class StableMatchSetup:
                 self.womanPref[prefRow].append(self.nameMap[self.allNames[w][m]])
             prefRow += 1
 
-        print("manPref list: ", self.manPref)
-        print("womanPref list: ", self.womanPref)
-
         # once the preference lists have been created, call createRanking to make the women's ranking list
-        self.createRanking()
+        self.__createRanking()
         
 
-    def createRanking(self):
+    def __createRanking(self):
         # create an nxn empty matrix for womens rankings
         self.ranking = [[0]*self.n for x in range(self.n)]
 
@@ -93,9 +157,8 @@ class StableMatchSetup:
             for i in range(self.n):
                 rank = self.womanPref[w][i]
                 self.ranking[w][rank] = i
-        
-        print("ranking: ", self.ranking)
-        
+
+    
 
 def main():
     # validating input file name
@@ -114,37 +177,10 @@ def main():
         else: 
             print("filename invalid")
 
-    sm = StableMatchSetup(filename)
-
-    print(sm.allNames, "\n", sm.nameMap)
-    sm.freeMen.printList()
-
-
-    
-
-    #createPrefLists()
-    #print(globals.manPref)
-
-
-"""
-Initially all m in the set M and all w in the set W are free
-While there is a man m who is free and hasn't proposed to every woman
-    Choose such a man m
-    Let w be the highest ranked woman in m's preference list to whom m
-        has not yet proposed
-    If w is free then 
-        (w, m) become engaged
-    Else w is currently engaged to m'
-        If w prefers m' to m then
-            m remains free
-        Else w prefers m to m'
-            (m, w) become engaged
-            m' becomes free
-        Endif
-    Endif
-Endwhile
-Return the set S of engaged pairs
-"""
+    sm = StableMatch()
+    sm.setup(filename)
+    print()
+    sm.performMatching()
 
 
 

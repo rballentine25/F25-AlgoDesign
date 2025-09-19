@@ -16,11 +16,17 @@ class LinkedList:
     def __init__(self):
         # when list is created, do not make a first node (list will be empty)
         self.first = None
+
+    def isEmpty(self):
+        if self.first is None:
+            return True
+        else:
+            return False
     
     """ 
     insert method defaults to inserting at the front of the list for simplicity 
     """
-    def insert(self, data):
+    def insertFront(self, data):
         # if the list is empty, create the first node. Next and prev will still be None
         if self.first is None:
             self.first = self.Node(data)
@@ -56,6 +62,18 @@ class LinkedList:
         # change current and previous links
         previous.next = newNode
         current.prev = newNode
+
+
+    def insertBack(self, data):
+        if self.first is None:
+            self.first = self.Node(data)
+        else:
+            current = self.first
+            while current.next is not None:
+                current = current.next
+
+            current.next = self.Node(data, prev=current)
+
 
     """
     delete method finds the node with the specified data and removes from the list
@@ -112,24 +130,32 @@ class LinkedList:
             else:
                 current = current.next
 
+    def printString(self):
+        returnString = []
+        if self.first is None:
+            print("ERROR: List Is Empty")
+            return 
+        
+        current = self.first
+        while(True):
+            returnString.append(str(current.data))
+            if current.next == None:
+                returnString.append("<-> NONE")
+                break
+            else:
+                returnString.append("<->")
+                current = current.next
+
+        return ' '.join(returnString)
+
 
 # def main():
 #     llist = LinkedList()
-#     llist.insert(1)
-#     llist.insert(2)
-#     llist.insert(3)
+#     llist.insertFront(1)
+#     llist.insertFront(2)
+#     llist.insertFront(3)
 #     llist.printList()
-
-#     llist.delete(1)
-#     llist.printList()
-
-#     llist.insert(5)
-#     llist.insertAt(6, index=4)
-#     llist.insertAt(6, index=2)
-#     llist.printList()
-
-#     llist.delete(5)
-#     llist.delete(6)
+#     llist.insertBack(0)
 #     llist.printList()
 
 
