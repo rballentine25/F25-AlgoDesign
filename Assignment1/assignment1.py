@@ -3,6 +3,8 @@ Author: Rachael Ballentine
 Assignment 1
 """
 import os
+from LinkedList import * # my script for a doubly linked list
+
 dirpath = os.path.dirname(os.path.abspath(__file__))
 
 class StableMatchSetup:
@@ -17,6 +19,8 @@ class StableMatchSetup:
         self.allNames = []
         self.filename = filename
 
+        self.freeMen = LinkedList()
+
         # create name map
         self.createNameMap()
         self.createPrefLists()
@@ -24,7 +28,9 @@ class StableMatchSetup:
         if self.n is not None:
             self.current = [None]*self.n
             self.next = [0]*self.n
-            self.freeMen = [i for i in range(self.n)]
+            
+            for m in reversed(range(self.n)):
+                self.freeMen.insert(m)
 
 
     def createNameMap(self):
@@ -91,8 +97,6 @@ class StableMatchSetup:
         print("ranking: ", self.ranking)
         
 
-
-
 def main():
     # validating input file name
     valid = False
@@ -113,11 +117,34 @@ def main():
     sm = StableMatchSetup(filename)
 
     print(sm.allNames, "\n", sm.nameMap)
-    print("\n")
+    sm.freeMen.printList()
+
+
+    
 
     #createPrefLists()
     #print(globals.manPref)
 
+
+"""
+Initially all m in the set M and all w in the set W are free
+While there is a man m who is free and hasn't proposed to every woman
+    Choose such a man m
+    Let w be the highest ranked woman in m's preference list to whom m
+        has not yet proposed
+    If w is free then 
+        (w, m) become engaged
+    Else w is currently engaged to m'
+        If w prefers m' to m then
+            m remains free
+        Else w prefers m to m'
+            (m, w) become engaged
+            m' becomes free
+        Endif
+    Endif
+Endwhile
+Return the set S of engaged pairs
+"""
 
 
 
