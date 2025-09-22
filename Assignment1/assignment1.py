@@ -3,7 +3,7 @@ Author: Rachael Ballentine
 Assignment 1
 """
 import os
-from LinkedList import * # my script for a doubly linked list
+from collections import deque
 
 dirpath = os.path.dirname(os.path.abspath(__file__))
 
@@ -17,9 +17,11 @@ class StableMatch:
         self.proposalCount = 0 # number of proposals
         self.wPartners = []    # each woman's current partner (None to start)
         self.nextW = []        # the next women on a man's pref list that he has not proposed to
-        self.freeMen = LinkedList() # list of free men (unengaged)
+        self.freeMen = deque() # list of free men
 
-        self.nameMap = {}
+        self.nameMapMen = {}
+        self.nameMapWomen = {}
+        self.nameMapWomenRev = {}
         self.allNames = []
 
         self.filename = ""
@@ -35,9 +37,11 @@ class StableMatch:
         if self.n is not None:
             self.wPartners = [None]*self.n
             self.nextW = [0]*self.n
+            self.matches = [[x, None] for x in range(self.n)]
             
             for m in range(self.n):
-                self.freeMen.insertBack(m)
+                #self.freeMen.insertBack(m)
+                self.freeMen.append(m)
         else: 
             return
 
@@ -46,10 +50,71 @@ class StableMatch:
         print("\tMen Preferences:", self.manPref)
         print("\tWomen Preferences:", self.womanPref)
         print("\tWomen's Rankings:", self.ranking)
-        print("\tFree Men Linked List:", self.freeMen.printString())
+        print("\tFree Men Linked List:", self.freeMen)
+        print("\tName map:", self.nameMapMen, self.nameMapWomen)
+
+    def __createNameMap(self):
+        file = open(self.filename, "r")
+
+        self.n = int(file.readline().strip()) # just read n
+
+        for line in file:
+            names = line.split()
+            self.allNames.append(names)
+
+        # assuming input file has names in alphabetical order
+        row = 0
+        # assign numbers to the men: rows 0:n
+        for i in range(self.n): 
+            self.nameMapMen[self.allNames[row][0]] = i 
+            row += 1
+
+        # assign numbers to the women: rows n+1:2n
+        for j in range(self.n):
+            self.nameMapWomen[self.allNames[row][0]] = j
+            row += 1
+
+        self.nameMapWomenRev = {name:num for num,name in self.nameMapWomen.items()}
+
+        file.close()
+
+    def __createPrefLists(self):
+        # create the men's preference lists
+        for m in range(self.n):
+            self.manPref.append([])
+            for w in range(1, self.n+1):
+                # in the current row (man), match the next woman from the input file to her
+                # id in the name map and append that id to the man pref matrix
+                self.manPref[m].append(self.nameMapWomen[self.allNames[m][w]])
+
+        # create the women's preference lists
+        # since allNames has to be indexed between n:2n-1 (0 based) to get correct row, 
+        # need another var to keep track of current row in womanPref
+        prefRow = 0
+        for w in range(self.n, 2*self.n): # second half of the input matrix
+            self.womanPref.append([])
+            for m in range(1, self.n+1):
+                # for each women, match each man in her list to his id and add to pref list
+                self.womanPref[prefRow].append(self.nameMapMen[self.allNames[w][m]])
+            prefRow += 1
+
+        # once the preference lists have been created, call createRanking to make the women's ranking list
+        self.__createRanking()
+        
+    def __createRanking(self):
+        # create an nxn empty matrix for womens rankings
+        self.ranking = [[0]*self.n for x in range(self.n)]
+
+        # fill in the ranking linearly with a single pass through women's pref list (n^2)
+        # for each man in the women's pref list, remember his id and use that to index into
+        # the ranking list. insert the current val i for his pref ranking in the ranking list
+        for w in range(self.n):
+            for i in range(self.n):
+                rank = self.womanPref[w][i]
+                self.ranking[w][rank] = i
 
 
-    """
+        """
     Initially all m in the set M and all w in the set W are free
     While there is a man m who is free and hasn't proposed to every woman
         Choose such a man m
@@ -68,97 +133,49 @@ class StableMatch:
     Endwhile
     Return the set S of engaged pairs
     """
-    def performMatching(self):
-        # this is very much not working will prob have to completely rewrite
-        while self.freeMen.isEmpty() is not True:
-            currM = self.freeMen.first.data
-            currW = self.nextW[currM]
-            wCurrPartner = self.wPartners[currW]
-            print("currM =", currM, "\ncurrW =", currW)
 
-            # the next woman is not engaged
-            if wCurrPartner is None:
+    def performMatching(self):
+        while len(self.freeMen) != 0:
+            currM = self.freeMen.popleft()
+            wID = self.nextW[currM]
+            currW = self.manPref[currM][wID]
+            
+            if self.wPartners[currW] is None:
                 self.wPartners[currW] = currM
-                self.freeMen.delete(currM)
-                print("currW not engaged, (", currM, ",", currW, ") now engaged")
-            # the next woman IS engaged, but prefers m to m'
-            elif self.ranking[currW][currM] > self.ranking[currW][wCurrPartner]:
-                self.freeMen.insertBack(wCurrPartner)
+                self.matches[currM][1] = currW
+            elif self.ranking[currW][currM] < self.ranking[currW][self.wPartners[currW]]:
+                self.freeMen.appendleft(self.wPartners[currW])
+                self.matches[self.wPartners[currW]][1] = None
                 self.wPartners[currW] = currM
-                self.freeMen.delete(currM)
-                print("currW preferred", currM, "to", wCurrPartner, "(", currM, ",", currW, "now engaged")
-            # the next woman IS engaged, AND prefers m' to m
+                self.matches[currM][1] = currW
             else:
-                # m is rejected by w. Move him to the back of the list?
-                self.freeMen.delete(currM)
-                self.freeMen.insertBack(currM)
-                print("currW,", currW, "rejected currM,", currM)
-                
+                self.freeMen.appendleft(currM)
+
             self.proposalCount += 1
             self.nextW[currM] += 1
 
-        
-
-
-    def __createNameMap(self):
-        file = open(self.filename, "r")
-
-        self.n = int(file.readline().strip()) # just read n
-
-        for line in file:
-            names = line.split()
-            self.allNames.append(names)
-
-        # assuming input file has names in alphabetical order
-        row = 0
-        # assign numbers to the men: rows 0:n
-        for i in range(self.n): 
-            self.nameMap[self.allNames[row][0]] = i 
-            row += 1
-
-        # assign numbers to the women: rows n+1:2n
-        for j in range(self.n):
-            self.nameMap[self.allNames[row][0]] = j
-            row += 1
-
-
-    def __createPrefLists(self):
-        # create the men's preference lists
-        for m in range(self.n):
-            self.manPref.append([])
-            for w in range(1, self.n+1):
-                # in the current row (man), match the next woman from the input file to her
-                # id in the name map and append that id to the man pref matrix
-                self.manPref[m].append(self.nameMap[self.allNames[m][w]])
-
-        # create the women's preference lists
-        # since allNames has to be indexed between n:2n-1 (0 based) to get correct row, 
-        # need another var to keep track of current row in womanPref
-        prefRow = 0
-        for w in range(self.n, 2*self.n): # second half of the input matrix
-            self.womanPref.append([])
-            for m in range(1, self.n+1):
-                # for each women, match each man in her list to his id and add to pref list
-                self.womanPref[prefRow].append(self.nameMap[self.allNames[w][m]])
-            prefRow += 1
-
-        # once the preference lists have been created, call createRanking to make the women's ranking list
-        self.__createRanking()
-        
-
-    def __createRanking(self):
-        # create an nxn empty matrix for womens rankings
-        self.ranking = [[0]*self.n for x in range(self.n)]
-
-        # fill in the ranking linearly with a single pass through women's pref list (n^2)
-        # for each man in the women's pref list, remember his id and use that to index into
-        # the ranking list. insert the current val i for his pref ranking in the ranking list
-        for w in range(self.n):
-            for i in range(self.n):
-                rank = self.womanPref[w][i]
-                self.ranking[w][rank] = i
-
+        print("Matching complete:", self.matches)
     
+
+    def writeOut(self):
+        outputTxt = [[None, None] for x in range(self.n)]
+
+        for x in range(self.n):
+            outputTxt[x][0] = self.allNames[x][0]
+            outputTxt[x][1] = self.nameMapWomenRev[self.matches[x][1]]
+    
+        print(outputTxt)
+        print(self.proposalCount)
+
+        string = ""
+        for x in range(self.n):
+            string = string + outputTxt[x][0] + " " + outputTxt[x][1] + "\n"
+
+        file = open("Output.txt", 'w')
+        file.write(string)
+        file.write(str(self.proposalCount))
+        file.close()
+
 
 def main():
     # validating input file name
@@ -179,8 +196,8 @@ def main():
 
     sm = StableMatch()
     sm.setup(filename)
-    print()
     sm.performMatching()
+    sm.writeOut()
 
 
 

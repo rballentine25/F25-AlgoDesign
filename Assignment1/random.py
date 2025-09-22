@@ -1,4 +1,5 @@
 import random
+from collections import deque
 import os 
 
 n=5
@@ -70,46 +71,48 @@ class LinkedList:
 
 #n = None
 def main():
-    llist = LinkedList()
-    llist.printList()
-    llist.delete(1)
-    llist.printList()
-    llist.insertFront(1)
-    llist.insertFront(2)
-    llist.insertFront(3)
-    llist.printList()
-    llist.delete(1)
-    print()
-    llist.printList()
-    llist.insertFront(1)
-    llist.delete(3)
-    print()
-    llist.printList()
-    print()
-    llist.insertFront(3)
-    llist.printList()
-    llist.delete(1)
-    print()
-    llist.printList()
-    #llist.insertFront(1)
-    
+    # llist = LinkedList()
+    # llist.printList()
+    # llist.delete(1)
+    # llist.printList()
+    # llist.insertFront(1)
+    # llist.insertFront(2)
+    # llist.insertFront(3)
+    # llist.printList()
+    # llist.delete(1)
+    # print()
+    # llist.printList()
+    # llist.insertFront(1)
+    # llist.delete(3)
+    # print()
+    # llist.printList()
+    # print()
+    # llist.insertFront(3)
+    # llist.printList()
+    # llist.delete(1)
+    # print()
+    # llist.printList()
 
-    # nc = NewClass(5)
-    # print(nc.n)
+    D = deque()
+    D.append(5)
+    D.append(4)
+    D.append(3)
+    print(D)
+    D.popleft()
+    print(D)
+    D.popleft()
+    print(D)
+    D.popleft()
+    print(D)
+    if len(D) == 0:
+        print("empty")
 
-    # num = 3
-    # empty = []
-    # for i in range(num):
-    #     empty.append([0]*num)
+    f = [[None, None] for x in range(3)]
+    print(f)
 
-    # empty2 = [[0]*num for i in range(num)]
-
-    # print(empty)
-    # print(empty2)
-
-    # list1 = [0, 3, 5, 8, 2, 11]
-    # list2 = [x for x in list1 if x>3]
-    # print(list2)
+    help = "help"
+    help = help + " no"
+    print(help)
 
 def method1(n):
     n = 4
