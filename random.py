@@ -1,6 +1,8 @@
 import random
 from collections import deque
 import os 
+import sys
+import re
 
 n=5
 current = [None]*4
@@ -113,6 +115,43 @@ def main():
     help = "help"
     help = help + " no"
     print(help)
+
+    inputArg = "Input09.txt"
+    expected = "Input"
+
+    if len(inputArg) > len(expected) and inputArg[len(expected)] is not ".":
+        fileNum = inputArg[len(expected)]
+    else:
+        fileNum = ""
+
+    outputName = "Output"
+    if len(fileNum) != 0:
+        outputName = outputName + fileNum + ".txt"
+    else:
+        outputName = outputName + ".txt"
+
+    print("for input name", inputArg, "output name is", outputName)
+
+    n = 3
+    matchLetters = [["man0", "woman1"], ["man1", "woman2"], ["man2", "woman0"]]
+    match = [[0, 1], [1, 2], [2, 0]]
+    list = {woman:man for man, woman in match}
+    womanPartners = [list[woman] for woman in range(n)]
+    print(womanPartners)
+
+
+    string = "folder/Input222.txt"
+    output = "Output"
+    start = string.find("Input") + len("Input")
+    end = string.find(".txt")
+    num = string[start:end]
+    output = output + num + ".txt"
+    print(num, output)
+
+
+
+
+    
 
 def method1(n):
     n = 4
